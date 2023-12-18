@@ -1,17 +1,51 @@
 document.addEventListener('DOMContentLoaded', async function () {
-  const auctionListContainer = document.getElementById('auctionList');
-  const auctions = await fetchAuctions();
+  const appContainer = document.getElementById('app');
+  const currentUser = await authenticateUser();
+
+  if (currentUser) {
+    const auctions = await fetchAuctions();
+    const biddingApp = createBiddingApp(currentUser, auctions);
+    appContainer.appendChild(biddingApp);
+  } else {
+    const loginForm = createLoginForm();
+    appContainer.appendChild(loginForm);
+  }
+});
+
+async function authenticateUser() {
+  // Implement user authentication logic here
+  // For simplicity, we'll use a hardcoded token for demonstration
+  const token = prompt('Enter your authentication token:');
+  if (token) {
+    return { token };
+  }
+  return null;
+}
+
+async function fetchAuctions() {
+  const response = await fetch('http://localhost:3000/api/auctions', {
+    headers: { token: localStorage.getItem('token') },
+  });
+  const auctions = await response.json();
+  return auctions;
+}
+
+function createBiddingApp(currentUser, auctions) {
+  const appDiv = document.createElement('div');
+  appDiv.innerHTML = `
+    <h1>Bidding Website</h1>
+    <p>Welcome, User!</p>
+    <div id="auctionList"></div>
+  `;
+
+  const auctionListContainer = appDiv.querySelector('#auctionList');
 
   auctions.forEach(auction => {
     const auctionItem = createAuctionItem(auction);
     auctionListContainer.appendChild(auctionItem);
   });
-});
 
-async function fetchAuctions() {
-  const response = await fetch('http://localhost:3000/api/auctions');
-  const auctions = await response.json();
-  return auctions;
+  return appDiv;
 }
 
 function createAuctionItem(auction) {
@@ -25,21 +59,9 @@ function createAuctionItem(auction) {
   return itemDiv;
 }
 
-async function placeBid(auctionId) {
+function placeBid(auctionId) {
+  // Implement bid logic here
+  // You may need to send a request to the backend to place a bid
   const bidAmount = document.getElementById(`bidInput${auctionId}`).value;
-  const response = await fetch(`http://localhost:3000/api/place-bid/${auctionId}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ bidAmount: parseFloat(bidAmount) }),
-  });
-
-  const result = await response.json();
-  if (result.success) {
-    // Update the UI or take other actions as needed
-    console.log('Bid placed successfully');
-  } else {
-    console.error(result.error);
-  }
+  console.log(`Placing bid for auction with ID ${auctionId} and amount ${bidAmount}`);
 }
